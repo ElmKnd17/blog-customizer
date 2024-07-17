@@ -2,7 +2,7 @@ import { ArrowButton } from 'components/arrow-button';
 import { Button } from 'components/button';
 
 import styles from './ArticleParamsForm.module.scss';
-import { useEffect, useRef, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 import { Select } from '../select';
 import { Text } from '../text';
 import {
@@ -18,6 +18,7 @@ import {
 import { RadioGroup } from '../radio-group';
 import { Separator } from '../separator';
 import clsx from 'clsx';
+import { useStandartClosure } from './hooks/useStandartClosure';
 
 export type ArticleParamsFormProps = {
 	setParametres: (articleState: ArticleStateType) => void;
@@ -30,42 +31,21 @@ export const ArticleParamsForm = ({
 	const [articleState, setArticleState] =
 		useState<ArticleStateType>(defaultArticleState);
 	const asideRef = useRef<HTMLDivElement | null>(null);
-	const formRef = useRef<HTMLFormElement | null>(null);
-	useEffect(() => {
-		if (isOpen) {
-			document.addEventListener('mousedown', handleClick);
-			document.addEventListener('keydown', handleEscapePress);
-			formRef.current?.addEventListener('submit', handleSubmit);
-		}
-		return () => {
-			document.removeEventListener('mousedown', handleClick);
-			document.removeEventListener('keydown', handleEscapePress);
-			formRef.current?.removeEventListener('submit', handleSubmit);
-		};
-	}, [isOpen]);
-	const handleSubmit = (event: SubmitEvent): void => {
+	useStandartClosure({
+		rootRef: asideRef,
+		isOpen: isOpen,
+		onClose: setIsOpen,
+	});
+	const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
 		event.preventDefault();
+		setParametres(articleState);
 	};
-	const handleResetParametres = () => {
+	const handleReset = (): void => {
 		setArticleState(defaultArticleState);
 		setParametres(defaultArticleState);
 	};
-	const handleSetParametres = () => {
-		setParametres(articleState);
-	};
 	const toggleFormOpenness = (): void => {
 		setIsOpen((isOpen) => !isOpen);
-	};
-	const handleEscapePress = (event: KeyboardEvent): void => {
-		if (event.key === 'Escape') {
-			setIsOpen(false);
-		}
-	};
-	const handleClick = (event: MouseEvent): void => {
-		// FIXME
-		if (!asideRef.current?.contains(event.target as Node)) {
-			setIsOpen(false);
-		}
 	};
 	return (
 		<>
@@ -73,7 +53,10 @@ export const ArticleParamsForm = ({
 			<aside
 				ref={asideRef}
 				className={clsx(styles.container, { [styles.container_open]: isOpen })}>
-				<form ref={formRef} className={styles.form}>
+				<form
+					onSubmit={handleSubmit}
+					onReset={handleReset}
+					className={styles.form}>
 					<Text as='h2' size={31} weight={800} uppercase={true}>
 						Задайте параметры
 					</Text>
@@ -127,16 +110,8 @@ export const ArticleParamsForm = ({
 					/>
 					<div style={{ marginBlockStart: 50 }} />
 					<div className={styles.bottomContainer}>
-						<Button
-							title='Сбросить'
-							type='reset'
-							onClick={handleResetParametres}
-						/>
-						<Button
-							title='Применить'
-							type='submit'
-							onClick={handleSetParametres}
-						/>
+						<Button title='Сбросить' type='reset' />
+						<Button title='Применить' type='submit' />
 					</div>
 				</form>
 			</aside>
